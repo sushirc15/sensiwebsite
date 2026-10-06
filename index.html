@@ -1,0 +1,766 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SENSEI SLOTS | Official Leaderboard & Cooked.com Partner</title>
+  
+  <!-- Meta & SEO -->
+  <meta name="description" content="Official Sensei Slots Leaderboard on Cooked.com! Win your share of the $1,000 monthly prize pool with code SENSEI." />
+  <meta property="og:title" content="SENSEI SLOTS LEADERBOARD | $1,000 Monthly Prizes" />
+  <meta property="og:description" content="Use code SENSEI on Cooked.com for instant VIP rakeback and climb the monthly leaderboard!" />
+  <meta property="og:image" content="sensei-logo.jpg" />
+  
+  <!-- Favicon (Image 2 Circular Logo) -->
+  <link rel="icon" type="image/jpeg" href="sensei-logo.jpg" />
+
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            c900: '#1a0508',
+            c800: '#2b0a10',
+            c700: '#4a0f1a',
+            c600: '#7a1427',
+            c500: '#b81d38',
+            c400: '#e63950',
+            c300: '#ff5c70',
+            gold: '#f5c542',
+          }
+        }
+      }
+    }
+  </script>
+
+  <!-- GSAP CDN -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+
+  <!-- Custom Styles -->
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body class="bg-[#0a0405] text-gray-100 min-h-screen relative antialiased selection:bg-[#e63950] selection:text-white">
+
+  <!-- Soft Vignette Overlay -->
+  <div class="vignette-overlay"></div>
+
+  <!-- Floating Fire Flakes & Embers Canvas (Additive Glow) -->
+  <canvas id="fire-flakes-canvas"></canvas>
+
+  <!-- -------------------------------------------------------------
+       KNIFE-SLICE LOADING SCREEN
+       ------------------------------------------------------------- -->
+  <div id="loader-container">
+    <div id="loader-half-top" class="loader-half loader-half-top"></div>
+    <div id="loader-half-bottom" class="loader-half loader-half-bottom"></div>
+    <div id="loader-flash"></div>
+
+    <div id="loader-slash-trail">
+      <div id="laser-line-element" class="slash-laser-line"></div>
+    </div>
+
+    <!-- Katana Blade SVG -->
+    <div id="loader-blade">
+      <svg viewBox="0 0 200 40" fill="none" xmlns="http://www.w3.org/2000/svg" class="w-full h-full">
+        <defs>
+          <linearGradient id="bladeGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+            <stop offset="0%" stop-color="#475569" />
+            <stop offset="60%" stop-color="#E2E8F0" />
+            <stop offset="90%" stop-color="#FFFFFF" />
+            <stop offset="100%" stop-color="#E63950" />
+          </linearGradient>
+        </defs>
+        <path d="M5 24 C 60 22, 130 18, 185 14 Q 198 13 195 20 Q 150 28, 50 30 Z" fill="url(#bladeGrad)" />
+        <circle cx="185" cy="14" r="3" fill="#FFFFFF" filter="drop-shadow(0 0 8px #E63950)" />
+      </svg>
+    </div>
+
+    <!-- Loader Content with Image 2 Circular Logo -->
+    <div id="loader-content">
+      <div class="w-20 h-20 mb-5 relative">
+        <div class="absolute -inset-2 bg-[#e63950]/30 rounded-full blur-xl animate-pulse"></div>
+        <img src="sensei-logo.jpg" alt="Sensei Slots logo" class="w-full h-full object-cover rounded-full border-2 border-[#e63950] shadow-[0_0_25px_rgba(230,57,80,0.7)]" />
+      </div>
+
+      <div class="text-center space-y-1 mb-6">
+        <h2 class="font-serif-display font-black text-2xl tracking-widest text-white">
+          SENSEI<span class="text-[#e63950]">.</span>SLOTS
+        </h2>
+        <p class="text-[11px] font-mono text-gray-400 uppercase tracking-widest">
+          Cooked.com Official Partner
+        </p>
+      </div>
+
+      <!-- Thin Glowing Progress Bar -->
+      <div class="w-64 sm:w-72 h-1.5 bg-white/10 rounded-full overflow-hidden border border-white/5 relative p-[1px]">
+        <div id="loader-progress-bar" class="h-full bg-gradient-to-r from-red-700 via-[#e63950] to-[#f5c542] rounded-full w-0 shadow-[0_0_12px_#e63950] transition-all duration-75"></div>
+      </div>
+
+      <div class="w-64 sm:w-72 mt-2.5 flex items-center justify-between text-[11px] font-mono text-gray-400">
+        <span>INITIALIZING REELS...</span>
+        <span id="loader-percentage" class="text-[#e63950] font-bold">0%</span>
+      </div>
+
+      <button id="loader-sound-toggle" class="mt-6 flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white/5 border border-white/10 text-gray-400 hover:text-white text-xs transition-all">
+        <i data-lucide="volume-x" id="loader-sound-icon" class="w-3.5 h-3.5 text-gray-400"></i>
+        <span id="loader-sound-label">Audio Muted (Click to Unmute)</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- Toast Notification -->
+  <div id="toast" class="fixed bottom-8 left-1/2 z-50 flex items-center gap-3 px-6 py-3.5 rounded-xl bg-gray-900/95 border border-[#e63950]/50 text-white shadow-[0_0_30px_rgba(230,57,80,0.4)] backdrop-blur-md font-medium text-sm">
+    <div class="w-6 h-6 rounded-full bg-[#e63950]/20 border border-[#e63950] flex items-center justify-center text-[#e63950]">
+      <i data-lucide="check" class="w-4 h-4"></i>
+    </div>
+    <span id="toast-msg">Promo Code "SENSEI" copied to clipboard!</span>
+  </div>
+
+  <!-- =============================================================
+       LEFT SLIDER TABS DRAWER (Slide-out Navigation Slider)
+       ============================================================= -->
+  <!-- Backdrop -->
+  <div id="slider-backdrop" class="slider-backdrop"></div>
+
+  <!-- Left Slider Drawer -->
+  <aside id="left-slider-drawer" class="left-slider-drawer" aria-label="Main Navigation Drawer">
+    <!-- Protruding Tab Toggle Handle -->
+    <button id="slider-toggle-btn" class="slider-toggle-handle" aria-label="Toggle Navigation Slider" title="Toggle Menu Tabs">
+      <i data-lucide="menu" class="w-4 h-4 text-[#f5c542]"></i>
+      <span class="toggle-text">TABS / MENU</span>
+      <i data-lucide="chevron-right" class="w-3.5 h-3.5 text-[#e63950]"></i>
+    </button>
+
+    <!-- Top Drawer Header -->
+    <div class="p-6 border-b border-[#4a0f1a]">
+      <div class="flex items-center justify-between">
+        <div class="flex items-center gap-3">
+          <div class="w-10 h-10 circular-logo circular-logo-pulsing p-0.5">
+            <img src="sensei-logo.jpg" alt="Sensei Slots Logo" class="w-full h-full object-cover rounded-full" />
+          </div>
+          <div>
+            <h3 class="font-serif-display font-black text-sm text-white tracking-wider">SENSEI SLOTS</h3>
+            <div class="text-[10px] font-mono text-[#f5c542] tracking-wider uppercase">VIP Community</div>
+          </div>
+        </div>
+        <button id="slider-close-btn" class="p-2 rounded-xl bg-white/5 border border-white/10 text-gray-400 hover:text-white hover:border-[#e63950] transition-colors" title="Close Menu">
+          <i data-lucide="x" class="w-4 h-4"></i>
+        </button>
+      </div>
+    </div>
+
+    <!-- Navigation Tabs List -->
+    <div class="px-4 py-6 space-y-2 overflow-y-auto flex-1">
+      <div class="px-3 pb-2 text-[10px] font-mono font-bold tracking-widest text-gray-400 uppercase">
+        NAVIGATION TABS
+      </div>
+
+      <a href="#hero" class="slider-nav-item active group" data-tab="hero">
+        <div class="flex items-center gap-3">
+          <i data-lucide="home" class="w-4 h-4 text-[#e63950] group-hover:scale-110 transition-transform"></i>
+          <span>Home</span>
+        </div>
+        <i data-lucide="chevron-right" class="w-3.5 h-3.5 opacity-50 group-hover:opacity-100 group-hover:translate-x-1 transition-all"></i>
+      </a>
+
+      <a href="#leaderboard" class="slider-nav-item group" data-tab="leaderboard">
+        <div class="flex items-center gap-3">
+          <i data-lucide="trophy" class="w-4 h-4 text-[#f5c542] group-hover:scale-110 transition-transform"></i>
+          <span>Leaderboard</span>
+        </div>
+        <span class="text-[10px] font-mono px-2 py-0.5 rounded-full bg-[#f5c542]/10 border border-[#f5c542]/30 text-[#f5c542] font-bold">$1,000</span>
+      </a>
+
+      <a href="#referral" class="slider-nav-item group" data-tab="referral">
+        <div class="flex items-center gap-3">
+          <i data-lucide="zap" class="w-4 h-4 text-[#ff5c70] group-hover:scale-110 transition-transform"></i>
+          <span>Claim Code</span>
+        </div>
+        <span class="text-[10px] font-mono px-2 py-0.5 rounded-full bg-[#e63950]/20 border border-[#e63950]/40 text-[#ff5c70] font-bold">SENSEI</span>
+      </a>
+
+      <a href="#socials" class="slider-nav-item group" data-tab="socials">
+        <div class="flex items-center gap-3">
+          <i data-lucide="radio" class="w-4 h-4 text-[#e63950] group-hover:scale-110 transition-transform"></i>
+          <span>Socials & Streams</span>
+        </div>
+        <i data-lucide="chevron-right" class="w-3.5 h-3.5 opacity-50 group-hover:opacity-100 group-hover:translate-x-1 transition-all"></i>
+      </a>
+
+      <a href="#faq" class="slider-nav-item group" data-tab="faq">
+        <div class="flex items-center gap-3">
+          <i data-lucide="help-circle" class="w-4 h-4 text-gray-400 group-hover:scale-110 transition-transform"></i>
+          <span>FAQ</span>
+        </div>
+        <i data-lucide="chevron-right" class="w-3.5 h-3.5 opacity-50 group-hover:opacity-100 group-hover:translate-x-1 transition-all"></i>
+      </a>
+    </div>
+
+    <!-- Bottom Promo & CTA Box -->
+    <div class="p-5 border-t border-[#4a0f1a] bg-[#140407]/90 space-y-3">
+      <div class="p-3 rounded-xl bg-[#2b0a10] border border-[#7a1427] flex items-center justify-between">
+        <div>
+          <div class="text-[10px] font-mono text-gray-400 uppercase">Promo Code</div>
+          <div class="font-mono font-black text-white text-sm">SENSEI</div>
+        </div>
+        <button data-action="copy-code" class="px-3 py-1.5 rounded-lg bg-[#e63950]/20 border border-[#e63950]/50 text-[#ff5c70] hover:text-white hover:bg-[#e63950] text-xs font-bold transition-all flex items-center gap-1.5" title="Copy Promo Code">
+          <i data-lucide="copy" class="w-3.5 h-3.5"></i>
+          <span>Copy</span>
+        </button>
+      </div>
+
+      <a href="https://cooked.com/?auth=register&referral_source=SENSEI" target="_blank" rel="noopener noreferrer"
+         class="btn-crimson-glow w-full py-3 rounded-xl font-extrabold text-xs text-white flex items-center justify-center gap-2 shadow-lg">
+        <span>Sign Up on Cooked</span>
+        <i data-lucide="external-link" class="w-3.5 h-3.5"></i>
+      </a>
+    </div>
+  </aside>
+
+  <!-- Top-Left Fixed Header with Logo (Image 2) and Menu Toggle Button -->
+  <div class="fixed top-5 left-5 z-40 flex items-center gap-2.5">
+    <button id="slider-header-toggle-btn" class="p-2.5 rounded-full bg-[#1a0508]/85 border border-[#7a1427] text-gray-200 hover:text-white hover:border-[#e63950] shadow-lg backdrop-blur-md transition-all flex items-center justify-center group" title="Open Navigation Menu">
+      <i data-lucide="menu" class="w-4 h-4 group-hover:scale-110 text-[#f5c542] transition-transform"></i>
+    </button>
+    <a href="#hero" class="block w-11 h-11 sm:w-12 sm:h-12 circular-logo circular-logo-pulsing group" title="Sensei Slots Home">
+      <img src="sensei-logo.jpg" alt="Sensei Slots logo" class="w-full h-full object-cover object-center rounded-full" />
+    </a>
+  </div>
+
+  <!-- Top-Right Fixed Sound Toggle -->
+  <div class="fixed top-5 right-5 z-40">
+    <button id="global-sound-toggle" title="Toggle Sound FX" class="p-2.5 rounded-full bg-[#1a0508]/80 border border-[#7a1427] text-gray-300 hover:text-white hover:border-[#e63950] shadow-lg backdrop-blur-md transition-all">
+      <i data-lucide="volume-x" id="global-sound-icon" class="w-4 h-4"></i>
+    </button>
+  </div>
+
+  <!-- =============================================================
+       LEFT-BOTTOM LIVE STREAM POP-UP WIDGET
+       ============================================================= -->
+  <div id="stream-widget" class="fixed bottom-5 left-5 z-40 flex flex-col items-start select-none">
+    
+    <!-- Expanded Stream Pop-up Window -->
+    <div id="stream-popup-card" class="stream-popup-card mb-3 hidden">
+      <!-- Header -->
+      <div class="p-3.5 border-b border-[#4a0f1a] flex items-center justify-between bg-[#1a0508]/95">
+        <div class="flex items-center gap-2.5">
+          <div class="w-7 h-7 circular-logo p-0.5 relative flex-shrink-0">
+            <img src="sensei-logo.jpg" alt="Sensei" class="w-full h-full object-cover rounded-full" />
+            <span id="stream-status-dot-inner" class="status-indicator-dot offline"></span>
+          </div>
+          <div>
+            <div class="font-bold text-xs text-white flex items-center gap-1.5">
+              <span>SENSEI SLOTS</span>
+              <span id="stream-badge-tag" class="stream-status-tag offline">OFFLINE</span>
+            </div>
+            <div id="stream-sub-tag" class="text-[10px] font-mono text-gray-400">Kick Live Stream</div>
+          </div>
+        </div>
+
+        <div class="flex items-center gap-1">
+          <button id="stream-minimize-btn" class="p-1.5 rounded-lg bg-white/5 hover:bg-white/10 text-gray-400 hover:text-white transition-colors" title="Minimize Tab">
+            <i data-lucide="chevron-down" class="w-3.5 h-3.5"></i>
+          </button>
+        </div>
+      </div>
+
+      <!-- Body: Live or Offline View -->
+      <div class="p-3 bg-[#120406]">
+        <!-- 1. LIVE EMBED VIEW (Active when streaming) -->
+        <div id="stream-live-container" class="space-y-2.5 hidden">
+          <div class="relative aspect-video rounded-xl overflow-hidden bg-black border border-[#7a1427] shadow-inner">
+            <iframe 
+              id="kick-stream-frame"
+              src="" 
+              class="w-full h-full border-0" 
+              allow="autoplay; fullscreen" 
+              allowfullscreen>
+            </iframe>
+          </div>
+          <div class="flex items-center justify-between px-1">
+            <div class="truncate text-xs font-semibold text-white max-w-[190px]">
+              <span id="stream-title-text">🔥 HIGH STAKES BONUS BUYS</span>
+            </div>
+            <a href="https://kick.com/senseislots" target="_blank" rel="noopener noreferrer" 
+               class="px-2.5 py-1 rounded-md bg-[#53FC18] text-black font-black text-[10px] hover:scale-105 active:scale-95 transition-all flex items-center gap-1">
+              <span>WATCH</span>
+              <i data-lucide="external-link" class="w-3 h-3"></i>
+            </a>
+          </div>
+        </div>
+
+        <!-- 2. OFFLINE VIEW (Active when offline) -->
+        <div id="stream-offline-container" class="p-3 text-center space-y-3">
+          <div class="w-12 h-12 rounded-full bg-[#2b0a10] border border-[#7a1427] flex items-center justify-center mx-auto text-[#e63950] shadow-[0_0_15px_rgba(230,57,80,0.3)]">
+            <i data-lucide="radio" class="w-6 h-6 opacity-60"></i>
+          </div>
+          <div class="space-y-1">
+            <h4 id="stream-offline-msg" class="font-bold text-xs text-white">Sensei is offline right now</h4>
+            <p id="stream-offline-sub" class="text-[11px] text-gray-400 leading-tight">
+              Catch the daily stream at 7:00 PM EST! Follow on Kick to get notified.
+            </p>
+          </div>
+          <a href="https://kick.com/senseislots" target="_blank" rel="noopener noreferrer"
+             class="btn-crimson-glow w-full py-2 rounded-xl font-bold text-xs text-white flex items-center justify-center gap-1.5 shadow-md">
+            <i data-lucide="bell" class="w-3.5 h-3.5"></i>
+            <span>Follow on Kick</span>
+          </a>
+        </div>
+      </div>
+    </div>
+
+    <!-- Collapsed Floating Tab Button (Bottom-Left) -->
+    <button id="stream-tab-btn" class="stream-floating-tab group" aria-label="Toggle Live Stream Popup">
+      <div class="w-6 h-6 circular-logo p-0.5 relative flex-shrink-0">
+        <img src="sensei-logo.jpg" alt="Sensei" class="w-full h-full object-cover rounded-full" />
+        <span id="stream-status-dot-tab" class="status-indicator-dot offline"></span>
+      </div>
+
+      <div class="flex items-center gap-2 text-left">
+        <span id="stream-tab-label" class="font-mono font-bold text-xs text-gray-300 group-hover:text-white transition-colors">
+          OFFLINE RN
+        </span>
+        <i data-lucide="chevron-up" id="stream-tab-chevron" class="w-3.5 h-3.5 text-gray-400 group-hover:text-white transition-transform"></i>
+      </div>
+    </button>
+
+  </div>
+
+  <!-- -------------------------------------------------------------
+       1. HOME SCREEN: ONLY THIS (Full Viewport, Pure Minimal Hero)
+       ------------------------------------------------------------- -->
+  <section id="hero" class="home-hero-section">
+    
+    <!-- Large CSS Blood Moon Radial Glow Behind Samurai -->
+    <div class="hero-blood-moon-glow"></div>
+
+    <!-- Main Container Centered with Layered Depth -->
+    <div class="hero-stage-container">
+      
+      <!-- Big Stylized Typography BEHIND Character (Layer 4) -->
+      <div class="hero-backdrop-text" aria-hidden="true">
+        <div class="hero-text-leaderboard">LEADERBOARD</div>
+        <div class="hero-text-website">WEBSITE</div>
+      </div>
+
+      <!-- Main Samurai Hero Cutout ON TOP of Text (Layer 10) -->
+      <div class="hero-character-wrapper">
+        <img 
+          src="sensei-hero.png" 
+          alt="Sensei Slots samurai" 
+          class="hero-samurai-img"
+        />
+      </div>
+
+      <!-- Sleek Scroll Down Indicator (Layer 20) -->
+      <div class="absolute bottom-6 sm:bottom-8 left-1/2 -translate-x-1/2 z-20">
+        <a href="#leaderboard" class="scroll-indicator-container group" title="Scroll to Leaderboard">
+          <div class="scroll-line-animated"></div>
+          <svg class="w-4 h-4 text-[#e63950] animate-bounce group-hover:text-[#f5c542] transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 14l-7 7m0 0l-7-7m7 7V3"></path>
+          </svg>
+        </a>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- -------------------------------------------------------------
+       2. LEADERBOARD SECTION (Revealed on Scroll)
+       ------------------------------------------------------------- -->
+  <section id="leaderboard" class="relative py-20 sm:py-28 border-t border-[#4a0f1a]/50">
+    <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+      
+      <!-- Center Circular Logo (Image 2, ~80px) with Pulse -->
+      <div class="flex justify-center mb-6">
+        <div class="w-20 h-20 sm:w-24 sm:h-24 circular-logo circular-logo-pulsing p-0.5">
+          <img src="sensei-logo.jpg" alt="Sensei Slots logo" class="w-full h-full object-cover rounded-full" />
+        </div>
+      </div>
+
+      <!-- Section Title & Subtitle -->
+      <div class="text-center space-y-2 mb-10">
+        <div class="inline-flex items-center gap-1.5 text-xs font-mono font-bold tracking-widest text-[#f5c542] uppercase">
+          <i data-lucide="crown" class="w-3.5 h-3.5"></i>
+          <span>MONTHLY SPRINT • $1,000 CASH POOL</span>
+        </div>
+        <h2 class="font-serif-display font-black text-3xl sm:text-4xl lg:text-5xl text-white tracking-wide">
+          MONTHLY LEADERBOARD
+        </h2>
+        <p class="text-xs sm:text-sm text-gray-400 max-w-md mx-auto">
+          Climb the ranks. Claim your share.
+        </p>
+      </div>
+
+      <!-- Prize Leaderboard Card Container -->
+      <div class="leaderboard-card-container">
+        
+        <!-- Live Countdown Subheader -->
+        <div class="p-3.5 mb-6 rounded-2xl bg-[#1a0508]/80 border border-[#7a1427]/60 flex items-center justify-between text-xs font-mono text-gray-300">
+          <div class="flex items-center gap-2">
+            <span class="w-2 h-2 rounded-full bg-[#e63950] animate-ping"></span>
+            <span class="font-bold text-white uppercase">Season Ends In:</span>
+          </div>
+          <div class="flex items-center gap-2 font-black text-[#f5c542]">
+            <span id="timer-days">18</span>d :
+            <span id="timer-hours">09</span>h :
+            <span id="timer-minutes">42</span>m :
+            <span id="timer-seconds" class="text-[#e63950]">15</span>s
+          </div>
+        </div>
+
+        <!-- Dynamic Rounded Pill Rows Container -->
+        <div id="prize-table-rows" class="space-y-3 font-mono">
+          <!-- Injected dynamically from config.js -->
+        </div>
+
+        <!-- Cooked CTA inside card -->
+        <div class="mt-8 pt-6 border-t border-[#4a0f1a] flex flex-col sm:flex-row items-center justify-between gap-4 text-center sm:text-left">
+          <div>
+            <div class="text-sm font-bold text-white">Join under code <span class="text-[#f5c542] font-mono">SENSEI</span></div>
+            <div class="text-xs text-gray-400">All wagers count 1:1 toward leaderboard rankings.</div>
+          </div>
+          <a href="https://cooked.com/?auth=register&referral_source=SENSEI" target="_blank" rel="noopener noreferrer"
+             class="btn-crimson-glow px-6 py-3 rounded-xl font-bold text-xs sm:text-sm text-white flex items-center gap-2 shadow-xl">
+            <span>Sign Up on Cooked</span>
+            <i data-lucide="arrow-right" class="w-4 h-4"></i>
+          </a>
+        </div>
+
+      </div>
+
+    </div>
+  </section>
+
+  <!-- -------------------------------------------------------------
+       3. PROMO CODE BOX & 3-STEP HOW TO JOIN
+       ------------------------------------------------------------- -->
+  <section id="referral" class="relative py-16 sm:py-24 bg-[#1a0508]/60 border-y border-[#4a0f1a]/50">
+    <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+      
+      <div class="leaderboard-card-container p-6 sm:p-10 border border-[#7a1427]">
+        
+        <div class="flex flex-col md:flex-row items-center justify-between gap-6">
+          <div class="space-y-2 text-center md:text-left">
+            <div class="inline-flex items-center gap-1.5 px-3 py-1 rounded-md bg-[#b81d38]/20 border border-[#b81d38]/40 text-[#ff5c70] text-xs font-bold">
+              <i data-lucide="zap" class="w-3.5 h-3.5"></i>
+              <span>EXCLUSIVE AFFILIATE PROMO CODE</span>
+            </div>
+            <h3 class="text-2xl sm:text-3xl font-serif-display font-black text-white">
+              Unlock Maximum VIP Rakeback
+            </h3>
+            <p class="text-gray-300 text-xs sm:text-sm max-w-md">
+              Use code <strong class="text-white font-mono">SENSEI</strong> during sign up on Cooked.com to qualify for the prize leaderboard.
+            </p>
+          </div>
+
+          <div class="flex flex-col sm:flex-row items-center gap-3 w-full md:w-auto">
+            <div class="w-full sm:w-auto px-6 py-3.5 rounded-2xl bg-[#0a0405] border-2 border-dashed border-[#e63950]/60 flex items-center justify-center gap-3">
+              <i data-lucide="ticket" class="w-5 h-5 text-[#e63950]"></i>
+              <span class="font-mono font-black text-2xl tracking-widest text-white select-all">SENSEI</span>
+            </div>
+
+            <button data-action="copy-code"
+                    class="w-full sm:w-auto btn-crimson-glow px-6 py-3.5 rounded-2xl font-extrabold text-sm text-white flex items-center justify-center gap-2 shadow-lg hover:scale-105 active:scale-95 transition-all">
+              <i data-lucide="copy" class="w-4 h-4"></i>
+              <span>COPY CODE</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- 3-Step Walkthrough -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mt-8 pt-8 border-t border-[#4a0f1a]">
+          <div class="p-5 rounded-2xl bg-[#2b0a10]/60 border border-[#4a0f1a]">
+            <div class="font-mono font-black text-xs text-[#f5c542] mb-1">STEP 01</div>
+            <h4 class="text-sm font-bold text-white mb-1">Click Referral Link</h4>
+            <p class="text-xs text-gray-400">Head to official Cooked registration page via our partner portal.</p>
+          </div>
+
+          <div class="p-5 rounded-2xl bg-[#2b0a10]/60 border border-[#4a0f1a]">
+            <div class="font-mono font-black text-xs text-[#f5c542] mb-1">STEP 02</div>
+            <h4 class="text-sm font-bold text-white mb-1">Enter Code SENSEI</h4>
+            <p class="text-xs text-gray-400">Apply promo code <span class="text-[#f5c542] font-mono">SENSEI</span> to link your account to VIP perks.</p>
+          </div>
+
+          <div class="p-5 rounded-2xl bg-[#2b0a10]/60 border border-[#4a0f1a]">
+            <div class="font-mono font-black text-xs text-[#f5c542] mb-1">STEP 03</div>
+            <h4 class="text-sm font-bold text-white mb-1">Wager & Win Cash</h4>
+            <p class="text-xs text-gray-400">Every wager accumulates leaderboard points automatically!</p>
+          </div>
+        </div>
+
+      </div>
+
+    </div>
+  </section>
+
+  <!-- -------------------------------------------------------------
+       4. SOCIALS & CHANNELS
+       ------------------------------------------------------------- -->
+  <section id="socials" class="relative py-20 border-b border-[#4a0f1a]/50">
+    <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+      
+      <div class="text-center space-y-2 mb-12">
+        <h3 class="text-xs font-mono font-extrabold uppercase tracking-widest text-[#e63950]">
+          // CONNECT WITH SENSEI
+        </h3>
+        <h2 class="font-serif-display text-3xl sm:text-4xl font-black text-white">
+          OFFICIAL STREAMS & LINKS
+        </h2>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        
+        <!-- Kick -->
+        <a href="https://kick.com/senseislots" target="_blank" rel="noopener noreferrer" class="social-card-crimson p-7 group">
+          <div class="social-spotlight"></div>
+          <div class="social-card-shine"></div>
+          
+          <div class="space-y-4 relative z-10">
+            <div class="flex items-center justify-between">
+              <div class="social-icon-tile">
+                <svg class="w-6 h-6" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M4 3h4.5v6.2l4.8-6.2h5.7l-6.2 8 6.6 10H13.8l-5.3-8.2V21H4V3z"/>
+                </svg>
+              </div>
+              <span class="social-badge-pill">
+                <span class="w-1.5 h-1.5 rounded-full bg-[#f5c542] animate-ping"></span>
+                <span>LIVE STREAMS</span>
+              </span>
+            </div>
+            <div>
+              <h4 class="social-card-title">Kick Live Channel</h4>
+              <p class="social-handle mt-1">kick.com/senseislots</p>
+              <p class="social-description">Daily slot sessions, high-stakes bonus buys, and interactive community giveaways.</p>
+            </div>
+          </div>
+
+          <div class="pt-6 mt-6 border-t border-[#4a0f1a] social-arrow-link relative z-10">
+            <span>Watch Live</span>
+            <svg class="social-arrow-icon w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M7 17L17 7M17 7H7M17 7V17"/></svg>
+          </div>
+        </a>
+
+        <!-- Bio Site -->
+        <a href="https://bio.site/SENSEISLOTS" target="_blank" rel="noopener noreferrer" class="social-card-crimson featured p-7 group">
+          <div class="social-spotlight"></div>
+          <div class="social-card-shine"></div>
+
+          <div class="space-y-4 relative z-10">
+            <div class="flex items-center justify-between">
+              <div class="social-icon-tile">
+                <svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+              </div>
+              <span class="social-badge-pill"><span>ALL LINKS</span></span>
+            </div>
+            <div>
+              <h4 class="social-card-title">Official Bio Site</h4>
+              <p class="social-handle mt-1">bio.site/SENSEISLOTS</p>
+              <p class="social-description">Central hub for all streamer portals, schedules, and active partner links.</p>
+            </div>
+          </div>
+
+          <div class="pt-6 mt-6 border-t border-[#7a1427] social-arrow-link relative z-10">
+            <span>Explore Hub</span>
+            <svg class="social-arrow-icon w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M7 17L17 7M17 7H7M17 7V17"/></svg>
+          </div>
+        </a>
+
+        <!-- X -->
+        <a href="https://x.com/cookedcom" target="_blank" rel="noopener noreferrer" class="social-card-crimson p-7 group">
+          <div class="social-spotlight"></div>
+          <div class="social-card-shine"></div>
+
+          <div class="space-y-4 relative z-10">
+            <div class="flex items-center justify-between">
+              <div class="social-icon-tile">
+                <svg class="w-6 h-6" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
+                </svg>
+              </div>
+              <span class="social-badge-pill"><span>UPDATES</span></span>
+            </div>
+            <div>
+              <h4 class="social-card-title">Cooked on X</h4>
+              <p class="social-handle mt-1">@cookedcom</p>
+              <p class="social-description">Real-time drops, flash codes, and casino release schedules.</p>
+            </div>
+          </div>
+
+          <div class="pt-6 mt-6 border-t border-[#4a0f1a] social-arrow-link relative z-10">
+            <span>Follow on X</span>
+            <svg class="social-arrow-icon w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M7 17L17 7M17 7H7M17 7V17"/></svg>
+          </div>
+        </a>
+
+        <!-- Instagram -->
+        <a href="https://www.instagram.com/cookedcom" target="_blank" rel="noopener noreferrer" class="social-card-crimson p-7 group">
+          <div class="social-spotlight"></div>
+          <div class="social-card-shine"></div>
+
+          <div class="space-y-4 relative z-10">
+            <div class="flex items-center justify-between">
+              <div class="social-icon-tile">
+                <svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="2" width="20" height="20" rx="5"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"/></svg>
+              </div>
+              <span class="social-badge-pill"><span>CLIPS</span></span>
+            </div>
+            <div>
+              <h4 class="social-card-title">Cooked Instagram</h4>
+              <p class="social-handle mt-1">@cookedcom</p>
+              <p class="social-description">Max-win reels, big multiplier hit reactions, and weekly highlights.</p>
+            </div>
+          </div>
+
+          <div class="pt-6 mt-6 border-t border-[#4a0f1a] social-arrow-link relative z-10">
+            <span>Follow on Instagram</span>
+            <svg class="social-arrow-icon w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M7 17L17 7M17 7H7M17 7V17"/></svg>
+          </div>
+        </a>
+
+        <!-- Facebook -->
+        <a href="https://facebook.com/cookedcom" target="_blank" rel="noopener noreferrer" class="social-card-crimson p-7 group md:col-span-2 lg:col-span-2">
+          <div class="social-spotlight"></div>
+          <div class="social-card-shine"></div>
+
+          <div class="space-y-4 relative z-10">
+            <div class="flex items-center justify-between">
+              <div class="social-icon-tile">
+                <svg class="w-6 h-6" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3V2z"/>
+                </svg>
+              </div>
+              <span class="social-badge-pill"><span>COMMUNITY</span></span>
+            </div>
+            <div>
+              <h4 class="social-card-title">Cooked Facebook Hub</h4>
+              <p class="social-handle mt-1">facebook.com/cookedcom</p>
+              <p class="social-description">Connect with the global player community and join weekly events.</p>
+            </div>
+          </div>
+
+          <div class="pt-6 mt-6 border-t border-[#4a0f1a] social-arrow-link relative z-10">
+            <span>Join Community</span>
+            <svg class="social-arrow-icon w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M7 17L17 7M17 7H7M17 7V17"/></svg>
+          </div>
+        </a>
+
+      </div>
+
+    </div>
+  </section>
+
+  <!-- -------------------------------------------------------------
+       5. FAQ ACCORDION
+       ------------------------------------------------------------- -->
+  <section id="faq" class="relative py-20">
+    <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+      
+      <div class="text-center space-y-2 mb-10">
+        <h2 class="font-serif-display text-3xl font-black text-white">
+          FREQUENTLY ASKED QUESTIONS
+        </h2>
+      </div>
+
+      <div class="space-y-3">
+        
+        <div class="faq-item rounded-2xl bg-[#1a0508]/80 border border-[#4a0f1a] overflow-hidden">
+          <button class="faq-btn w-full p-5 text-left flex items-center justify-between gap-4">
+            <span class="font-bold text-sm sm:text-base text-white">How do I enter the $1,000 Leaderboard?</span>
+            <i data-lucide="chevron-down" class="faq-icon w-4 h-4 text-gray-400 transition-transform duration-300"></i>
+          </button>
+          <div class="faq-content px-5 pb-5 text-xs sm:text-sm text-gray-300 border-t border-[#2b0a10] pt-3">
+            Sign up on Cooked.com with code <strong class="text-[#f5c542] font-mono">SENSEI</strong>. Every wager automatically counts 1:1 toward your ranking!
+          </div>
+        </div>
+
+        <div class="faq-item rounded-2xl bg-[#1a0508]/80 border border-[#4a0f1a] overflow-hidden">
+          <button class="faq-btn w-full p-5 text-left flex items-center justify-between gap-4">
+            <span class="font-bold text-sm sm:text-base text-white">When are leaderboard prizes paid out?</span>
+            <i data-lucide="chevron-down" class="faq-icon w-4 h-4 text-gray-400 transition-transform duration-300"></i>
+          </button>
+          <div class="faq-content hidden px-5 pb-5 text-xs sm:text-sm text-gray-300 border-t border-[#2b0a10] pt-3">
+            Prizes are credited directly to winning Cooked account balances at the end of the monthly countdown cycle with 0% wagering requirement.
+          </div>
+        </div>
+
+        <div class="faq-item rounded-2xl bg-[#1a0508]/80 border border-[#4a0f1a] overflow-hidden">
+          <button class="faq-btn w-full p-5 text-left flex items-center justify-between gap-4">
+            <span class="font-bold text-sm sm:text-base text-white">What perks do I receive with code SENSEI?</span>
+            <i data-lucide="chevron-down" class="faq-icon w-4 h-4 text-gray-400 transition-transform duration-300"></i>
+          </button>
+          <div class="faq-content hidden px-5 pb-5 text-xs sm:text-sm text-gray-300 border-t border-[#2b0a10] pt-3">
+            You get maximum VIP rakeback unlock, stream reload giveaway eligibility, and full leaderboard participation rights.
+          </div>
+        </div>
+
+      </div>
+
+    </div>
+  </section>
+
+  <!-- -------------------------------------------------------------
+       6. FOOTER & RESPONSIBLE GAMBLING
+       ------------------------------------------------------------- -->
+  <footer class="relative bg-[#070203] border-t border-[#4a0f1a]/80 pt-12 pb-10 text-gray-400 text-xs">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8">
+      
+      <div class="flex flex-col md:flex-row items-center justify-between gap-6 text-center md:text-left">
+        
+        <!-- Image 2 Circular Footer Logo -->
+        <div class="flex items-center gap-3">
+          <div class="w-10 h-10 circular-logo p-0.5">
+            <img src="sensei-logo.jpg" alt="Sensei Slots logo" class="w-full h-full object-cover rounded-full" />
+          </div>
+          <div>
+            <div class="font-serif-display font-black text-base text-white tracking-wider">SENSEI SLOTS</div>
+            <div class="text-[11px] text-gray-400">Official Streamer Partner for Cooked.com</div>
+          </div>
+        </div>
+
+        <!-- 18+ Responsible Gambling -->
+        <div class="flex items-center gap-3 p-3 rounded-2xl bg-[#1a0508] border border-[#7a1427]">
+          <div class="w-8 h-8 rounded-xl bg-[#b81d38]/30 text-[#ff5c70] border border-[#e63950]/50 flex items-center justify-center font-black text-xs">
+            18+
+          </div>
+          <div class="text-left">
+            <div class="font-bold text-white text-xs">Gamble Responsibly</div>
+            <a href="https://www.begambleaware.org/" target="_blank" rel="noopener noreferrer" class="text-[#e63950] hover:underline font-semibold text-[11px]">
+              Visit BeGambleAware.org →
+            </a>
+          </div>
+        </div>
+
+      </div>
+
+      <div class="p-4 rounded-xl bg-[#140407] border border-[#2b0a10] text-[11px] text-gray-400 leading-relaxed">
+        18+ only. Gamble responsibly. Please check your local laws before participating. Not affiliated with Kick.
+      </div>
+
+      <div class="pt-4 border-t border-[#2b0a10] flex flex-col sm:flex-row items-center justify-between gap-3 text-gray-500 text-[11px]">
+        <div>© 2026 Sensei Slots. All Rights Reserved.</div>
+        <div class="flex items-center gap-4">
+          <a href="#hero" class="hover:text-white transition-colors">Back to Top</a>
+          <a href="https://cooked.com/?auth=register&referral_source=SENSEI" target="_blank" class="hover:text-white transition-colors">Cooked.com</a>
+          <a href="https://www.begambleaware.org/" target="_blank" class="hover:text-white transition-colors">BeGambleAware</a>
+        </div>
+      </div>
+
+    </div>
+  </footer>
+
+  <!-- Load Config & Scripts -->
+  <script src="config.js"></script>
+  <script src="script.js"></script>
+  <script>
+    if (typeof lucide !== 'undefined') {
+      lucide.createIcons();
+    }
+  </script>
+</body>
+</html>
